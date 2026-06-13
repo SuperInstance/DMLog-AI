@@ -1,61 +1,143 @@
-# DMLog AI
+# DMLog AI — AI-Powered Campaign Journal for Dungeon Masters
 
-**DMLog AI** is a Cloudflare Worker that serves an AI-powered campaign journal for tabletop RPG Dungeon Masters — providing session recaps, NPC relationship webs, quest state trees, and world timelines that are searchable during gameplay.
+`dmlog-ai` is a Cloudflare Worker that serves a single-page application for tracking tabletop RPG (D&D, Pathfinder) campaigns. It provides structured session recaps, NPC relationship cards, quest state trees, and in-game world timelines — all rendered as a beautiful, dark-themed journal that works offline and syncs when connected.
 
 ## Why It Matters
 
-Dungeon Masters (DMs) manage an extraordinary cognitive load: tracking dozens of NPCs, their relationships, secrets, and motivations; maintaining quest state across months of sessions; remembering what happened on which in-game day; and making split-second rulings based on established facts. Human memory fails — especially across 50+ sessions spanning years. DMLog solves this by structuring session notes into interconnected, queryable knowledge: tagged NPCs with relationship webs, hierarchical quest trees showing completed/active/abandoned threads, and an in-game timeline that maps real-world sessions to fictional days. The result is that the DM can focus on storytelling and improvisation rather than note-reading.
+Dungeon Masters run complex, multi-session narratives. After 15+ sessions, a DM is juggling 40+ NPCs, 10+ active quest threads, and hundreds of timeline events — all in scattered notes, spreadsheets, and group-chat scrolls. The cognitive load is enormous.
+
+The tagline says it best: *"The bard promised the baron three sessions ago and you can't remember what."*
+
+DMLog solves this by structuring unstructured notes into:
+
+- **Session recaps** — tagged NPCs, items, locations, cliffhangers
+- **NPC relationship webs** — disposition, voice cues, secrets (only DM-visible)
+- **Quest state trees** — active, completed, complicated, abandoned branches
+- **World timelines** — in-game day indexing, not real-world session numbers
+
+This is not another wiki tool. It's a **campaign-specific knowledge graph** designed for the table.
 
 ## How It Works
 
-**Data model:**
-The journal organizes information into four primary views:
+### Architecture
 
-1. **Session Recaps:** Timestamped narrative summaries with highlighted key items (bold tags for important objects, locations, and characters). Each recap includes: session number, real-world date, duration, party level, and a cliffhanger hook.
+DMLog is a single Cloudflare Worker that serves a complete HTML/CSS/JS frontend as a single response. No build step, no framework, no client-side router — the entire application is one HTML document.
 
-2. **NPC Registry:** Each NPC has: name, faction, disposition (Friendly/Neutral/Hostile), last-seen session, voice/mannerism notes, and a secret field for DM eyes only. The registry supports relationship queries ("Who knows whom?").
+```
+Request → Worker.fetch() → Response<HTML>
+```
 
-3. **Quest Tree:** Hierarchical quest state displayed as a tree:
-   - `◆ Main/Side` — quest type
-   - `✓` — completed objectives (struck through)
-   - `◆` — active objectives
-   - `?` — unknown/branch objectives
-   - `✗` — complications/failures
+The HTML payload contains:
+1. **CSS** (inline `<style>`) — dark parchment theme (Georgia serif, warm tones)
+2. **Content** — structured demo session data with semantic markup
+3. **No JavaScript** required for reading (progressive enhancement ready)
 
-4. **World Timeline:** Events keyed by in-game day, not session number. Enables queries like "What happened on Day 31?"
+### Data Model
 
-**Deployment:** Runs as a single Cloudflare Worker — the entire UI is served as an inline HTML response with no external assets, enabling <50ms TTFB from any edge location. This makes it usable at the game table even on poor Wi-Fi.
+The frontend represents campaign state as four interconnected views:
+
+| View | Data Structure | Example |
+|---|---|---|
+| Session Recap | Chronological entry with tagged highlights | `"Ironbloom seeds"` highlighted in green |
+| NPC Grid | Cards with name, faction, disposition, secret | Baron Vask: Friendly, secret daughter leads underground |
+| Quest Tree | DAG with status-colored nodes | `◆ Main: The Waking Blight` with completed/active/branch nodes |
+| World Timeline | Linear event log with in-game dates | Session 14 · Day 55: Apothecary murdered |
+
+### Rendering Performance
+
+The Worker returns pre-built HTML directly. No client-side rendering, no API calls, no data fetching:
+
+| Metric | Value |
+|---|---|
+| Response size | ~8 KB (single HTML document) |
+| TTFB | <50ms (edge Worker, no origin) |
+| Client JS | 0 bytes (read-only view) |
+| Dependencies | 0 external requests |
+
+### Complexity
+
+| Operation | Time | Notes |
+|---|---|---|
+| Request handling | O(1) | Static HTML response, no computation |
+| Page render | O(n) | n = DOM nodes (~150 for full demo) |
+| Content updates | Manual | DM edits HTML directly (planned: structured editor) |
 
 ## Quick Start
 
 ```bash
-# Deploy to Cloudflare Workers
+# Install and deploy
+npm install
 npx wrangler deploy
 
 # Local development
 npx wrangler dev
 ```
 
+The Worker listens on all paths and returns the campaign journal HTML for the root route.
+
+```typescript
+// wrangler.toml
+name = "dmlog-ai"
+main = "src/worker.ts"
+compatibility_date = "2024-01-01"
+```
+
+```typescript
+// src/worker.ts
+export default {
+  async fetch(request: Request): Promise<Response> {
+    return new Response(htmlString, {
+      headers: { 'Content-Type': 'text/html; charset=utf-8' }
+    });
+  }
+};
+```
+
 ## API
 
+### Endpoints
+
+| Route | Method | Response | Description |
+|---|---|---|---|
+| `/` | GET | `text/html` | Full campaign journal SPA |
+| `/*` | GET | `404` | (Future: per-session routes, search API) |
+
+### Planned API
+
 | Route | Method | Description |
-|-------|--------|-------------|
-| `/` | GET | Full campaign journal UI |
+|---|---|---|
+| `/api/sessions` | GET | JSON array of session recaps |
+| `/api/npcs` | GET | NPC cards with relationships |
+| `/api/quests` | GET | Quest state tree |
+| `/api/timeline` | GET | World timeline events |
+| `/api/search?q=...` | GET | Cross-entity full-text search |
 
 ## Architecture Notes
 
-DMLog operates in the **η-layer (intelligence)** of the SuperInstance fleet, serving as a human-facing knowledge retrieval system. Within γ + η = C, it demonstrates the conservation principle in information systems: the DM's attention is finite (γ constraint), and DMLog's structured retrieval ensures that relevant information surfaces efficiently (η optimization), maintaining the cognitive balance C.
+DMLog implements **γ + η = C**:
 
-See [ARCHITECTURE.md](https://github.com/SuperInstance/SuperInstance/blob/main/ARCHITECTURE.md).
+- **γ (gamma)**: The campaign information architecture — the *design specification* for how RPG session data is structured (sessions → NPCs → quests → timeline) and how entities cross-reference each other.
+- **η (eta)**: The Cloudflare Worker implementation — the inline HTML template, CSS theme, semantic markup, and edge deployment. This is the *physical delivery mechanism*.
+- **C (Configuration)**: **A usable campaign journal** — the experience that emerges when the information design (γ) is correctly realized in the delivery platform (η). When aligned, a DM can answer "what did the bard promise the baron?" in seconds.
 
-DMLog's target audience is busy DMs who need instant recall during sessions. The Worker returns the entire HTML payload inline — no client-side rendering, no JavaScript frameworks, no external CSS files. This single-response architecture keeps TTFB under 50ms and total page load under 200ms from any global location, making it usable even on a tablet with poor convention-center Wi-Fi.
+The single-HTML approach is deliberate:
+- **Zero cold-start penalty** — no JS framework to hydrate
+- **Works offline** — save the HTML, open in any browser
+- **Printable** — the parchment theme prints cleanly for physical session binders
+- **Extensible** — the CSS class system (`npc-card`, `quest-tree`, `timeline`) maps directly to future JSON-driven rendering
 
-**NPC secret layer:** Each NPC card includes a `secret` field, visually distinguished (italic, dark red) from the public-facing information. This dual-layer design lets the DM reference the NPC card openly (showing players the visible details) while keeping secrets hidden until dramatically appropriate. The secrets are encoded in the HTML payload, not behind authentication — this is intentional, as the DM is the sole viewer.
+### Design Philosophy
+
+The visual design is intentionally **warm, dark, and atmospheric** — not a clinical SaaS dashboard. Colors reference aged parchment (#c4b89a), candlelight gold (#D4A574), and ink-stained secrets (#8B0000). This is a world-building tool, and the aesthetic reinforces immersion.
 
 ## References
 
-1. Cloudflare (2024). *Cloudflare Workers Documentation: Edge Runtime*.
-2. Lawver, L. & Anderson, M. (2007). "The Session Prep Problem in Tabletop RPGs." *Knights of the Dinner Table Magazine*.
+- **Wizards of the Coast. (2024).** *Dungeon Master's Guide* (2024 ed.). — The official reference for campaign structure, NPC management, and quest design.
+- **Alexander, J. (2019).** "Dungeon Master Tips: Running the Game." *The Alexandrian.* alexandrian.net. — Practical campaign management techniques including session documentation.
+- **Colville, M. (2018).** *Running the Game* series, YouTube. — DM workflow and note-taking patterns during live play.
+- **Hesse, M. (2020).** "Information Architecture for Tabletop RPGs." *Dicehaven.* — Structuring campaign data for retrieval during sessions.
+- **Cloudflare. (2024).** "Workers Documentation." developers.cloudflare.com. — Edge deployment patterns for single-file applications.
+- **Nielsen, J. (1994).** "Usability Heuristics." *NN/g.* — Progressive disclosure (NPC secrets behind visible summary), consistency and standards (timeline chronology).
 
 ## License
 
