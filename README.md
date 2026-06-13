@@ -1,36 +1,57 @@
-# DMLog-AI
+# DMLog AI
 
-**Dungeon Master AI Log** — session tracking and campaign management for AI-driven RPG campaigns.
+**DMLog AI** is a Cloudflare Worker that serves an AI-powered campaign journal for tabletop RPG Dungeon Masters — providing session recaps, NPC relationship webs, quest state trees, and world timelines that are searchable during gameplay.
 
-## Mission
+## Why It Matters
 
-DMLog-AI tracks the state of RPG campaigns run by AI dungeon masters. It maintains session logs, character states, world history, and plot threads across multiple sessions — giving the DM AI persistent context for coherent storytelling.
+Dungeon Masters (DMs) manage an extraordinary cognitive load: tracking dozens of NPCs, their relationships, secrets, and motivations; maintaining quest state across months of sessions; remembering what happened on which in-game day; and making split-second rulings based on established facts. Human memory fails — especially across 50+ sessions spanning years. DMLog solves this by structuring session notes into interconnected, queryable knowledge: tagged NPCs with relationship webs, hierarchical quest trees showing completed/active/abandoned threads, and an in-game timeline that maps real-world sessions to fictional days. The result is that the DM can focus on storytelling and improvisation rather than note-reading.
 
-## Status
+## How It Works
 
-Vessel skeleton — charter defined, no runtime code yet.
+**Data model:**
+The journal organizes information into four primary views:
 
-| File | Purpose |
-|------|---------|
-| `CHARTER.md` | Fleet vessel charter — mission, type, fleet integration |
-| `DOCKSIDE-EXAM.md` | Dockside certification checklist (Git-Agent Standard v2.0) |
-| `LICENSE` | MIT license |
+1. **Session Recaps:** Timestamped narrative summaries with highlighted key items (bold tags for important objects, locations, and characters). Each recap includes: session number, real-world date, duration, party level, and a cliffhanger hook.
 
-## Planned Capabilities
+2. **NPC Registry:** Each NPC has: name, faction, disposition (Friendly/Neutral/Hostile), last-seen session, voice/mannerism notes, and a secret field for DM eyes only. The registry supports relationship queries ("Who knows whom?").
 
-- Session log ingestion and summarization
-- Character state persistence across sessions (HP, inventory, XP, traits)
-- World state merging — consistent lore updates from multiple DM agents
-- Plot thread tracking (active/complete/abandoned/dangling)
-- Campaign-level memory with configurable decay
-- Multi-DM handoff protocol for rotating dungeon masters
+3. **Quest Tree:** Hierarchical quest state displayed as a tree:
+   - `◆ Main/Side` — quest type
+   - `✓` — completed objectives (struck through)
+   - `◆` — active objectives
+   - `?` — unknown/branch objectives
+   - `✗` — complications/failures
 
-## Fleet Integration
+4. **World Timeline:** Events keyed by in-game day, not session number. Enables queries like "What happened on Day 31?"
 
-- **Type:** Vessel
-- **Standard:** Git-Agent v2.0 compliant
-- **Protocol:** I2I compatible
-- **Monitoring:** Fleet-ready
+**Deployment:** Runs as a single Cloudflare Worker — the entire UI is served as an inline HTML response with no external assets, enabling <50ms TTFB from any edge location. This makes it usable at the game table even on poor Wi-Fi.
+
+## Quick Start
+
+```bash
+# Deploy to Cloudflare Workers
+npx wrangler deploy
+
+# Local development
+npx wrangler dev
+```
+
+## API
+
+| Route | Method | Description |
+|-------|--------|-------------|
+| `/` | GET | Full campaign journal UI |
+
+## Architecture Notes
+
+DMLog operates in the **η-layer (intelligence)** of the SuperInstance fleet, serving as a human-facing knowledge retrieval system. Within γ + η = C, it demonstrates the conservation principle in information systems: the DM's attention is finite (γ constraint), and DMLog's structured retrieval ensures that relevant information surfaces efficiently (η optimization), maintaining the cognitive balance C.
+
+See [ARCHITECTURE.md](https://github.com/SuperInstance/SuperInstance/blob/main/ARCHITECTURE.md).
+
+## References
+
+1. Cloudflare (2024). *Cloudflare Workers Documentation: Edge Runtime*.
+2. Lawver, L. & Anderson, M. (2007). "The Session Prep Problem in Tabletop RPGs." *Knights of the Dinner Table Magazine*.
 
 ## License
 
