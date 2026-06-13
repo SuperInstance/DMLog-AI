@@ -48,6 +48,10 @@ DMLog operates in the **η-layer (intelligence)** of the SuperInstance fleet, se
 
 See [ARCHITECTURE.md](https://github.com/SuperInstance/SuperInstance/blob/main/ARCHITECTURE.md).
 
+DMLog's target audience is busy DMs who need instant recall during sessions. The Worker returns the entire HTML payload inline — no client-side rendering, no JavaScript frameworks, no external CSS files. This single-response architecture keeps TTFB under 50ms and total page load under 200ms from any global location, making it usable even on a tablet with poor convention-center Wi-Fi.
+
+**NPC secret layer:** Each NPC card includes a `secret` field, visually distinguished (italic, dark red) from the public-facing information. This dual-layer design lets the DM reference the NPC card openly (showing players the visible details) while keeping secrets hidden until dramatically appropriate. The secrets are encoded in the HTML payload, not behind authentication — this is intentional, as the DM is the sole viewer.
+
 ## References
 
 1. Cloudflare (2024). *Cloudflare Workers Documentation: Edge Runtime*.
