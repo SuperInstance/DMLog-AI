@@ -1,30 +1,37 @@
-# DMLog
+# DMLog-AI
 
-> Campaign journal for tabletop RPGs.
+**Dungeon Master AI Log** — session tracking and campaign management for AI-driven RPG campaigns.
 
-**[dmlog.ai](https://dmlog.ai)**
+## Mission
 
-Session notes that actually make sense when you read them back. NPC relationships, quest states, world timeline — all connected, all searchable. Because your players remember everything and you should too.
+DMLog-AI tracks the state of RPG campaigns run by AI dungeon masters. It maintains session logs, character states, world history, and plot threads across multiple sessions — giving the DM AI persistent context for coherent storytelling.
 
-## What It Does
+## Status
 
-- **Session recaps** — Dictate or type notes during the game; DMLog structures them into searchable recaps
-- **NPC relationship webs** — Track who knows whom, who owes whom, who's secretly related to whom
-- **Quest state trees** — Main quests, side quests, abandoned threads at a glance
-- **World timeline** — In-game days, not real-world sessions
-- **Quick search** — "What did the bard promise the baron?" → instant answer with session reference
-- **Offline support** — No Wi-Fi at the table required
+Vessel skeleton — charter defined, no runtime code yet.
 
-## Tech Stack
+| File | Purpose |
+|------|---------|
+| `CHARTER.md` | Fleet vessel charter — mission, type, fleet integration |
+| `DOCKSIDE-EXAM.md` | Dockside certification checklist (Git-Agent Standard v2.0) |
+| `LICENSE` | MIT license |
 
-- Cloudflare Workers (edge deployment)
-- Single-file HTML response
-- Custom domain via Cloudflare
+## Planned Capabilities
 
-## Deployment
+- Session log ingestion and summarization
+- Character state persistence across sessions (HP, inventory, XP, traits)
+- World state merging — consistent lore updates from multiple DM agents
+- Plot thread tracking (active/complete/abandoned/dangling)
+- Campaign-level memory with configurable decay
+- Multi-DM handoff protocol for rotating dungeon masters
 
-```bash
-npx wrangler deploy
-```
+## Fleet Integration
 
-## Part of [SuperInstance](https://superinstance.ai)
+- **Type:** Vessel
+- **Standard:** Git-Agent v2.0 compliant
+- **Protocol:** I2I compatible
+- **Monitoring:** Fleet-ready
+
+## License
+
+MIT
